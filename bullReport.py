@@ -12,4 +12,5 @@ period = tonight.find(class_="period-name").get_text()
 short_desc = tonight.find(class_="short-desc").get_text()
 temp = tonight.find(class_="temp").get_text()
 
+
 print(period, short_desc, temp)
