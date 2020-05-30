@@ -1,6 +1,7 @@
+from flask import Flask
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask
+
 
 # print a nice greeting.
 def say_hello(username = "World"):
