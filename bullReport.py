@@ -18,7 +18,7 @@ instructions = '''
 home_link = '<p><a href="/">Back</a></p>\n'
 
 instructions2 = '''
-    <p><em>Hint</em>: Me adding new filesSSS.</p>\n'''
+    <p><em>The Bull Report</em> </p>\n'''
 
 footer_text = '</body>\n</html>'
 
