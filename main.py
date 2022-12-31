@@ -1,12 +1,11 @@
-from typing import Union
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
-from typing import List
-from pydantic import BaseModel
+from typing import *
+from fastapi import *
+from fastapi.responses import *
+from pydantic import *
 
 app = FastAPI()
 
-def parse_list(names: List[str] = Query(None)) -> Optional[List]:
+def parse_list(names: List[str] = Query(None, description="List of names to greet")) -> Optional[List]:
     """
     accepts strings formatted as lists with square brackets
     names can be in the format
@@ -47,7 +46,7 @@ def hello_list(names: List[str] = Depends(parse_list)):
     """ list param method """
 
     if names is not None:
-        return StreamingResponse((f"Hello {name}" for name in names))
+        return StreamingResponse((f"Hello {name}\n" for name in names))
     else:
         return {"message": "no names"}
 
@@ -62,81 +61,6 @@ class GraphList(BaseModel):
 @app.post("/dummypath")
 async def get_body(data: GraphList):
     return data
-
-def generate_html_response():
-    html_content = """
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body {font-family: Arial, Helvetica, sans-serif;}
-* {box-sizing: border-box;}
-
-input[type=text], select, textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-  margin-top: 6px;
-  margin-bottom: 16px;
-  resize: vertical;
-}
-
-input[type=submit] {
-  background-color: #04AA6D;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-input[type=submit]:hover {
-  background-color: #45a049;
-}
-
-.container {
-  border-radius: 5px;
-  background-color: #f2f2f2;
-  padding: 20px;
-}
-</style>
-</head>
-<body>
-
-<h3>Contact Form</h3>
-
-<div class="container">
-  <form action="/action_page.php">
-    <label for="fname">First Name</label>
-    <input type="text" id="fname" name="firstname" placeholder="Your name..">
-
-    <label for="lname">Last Name</label>
-    <input type="text" id="lname" name="lastname" placeholder="Your last name..">
-
-    <label for="country">Country</label>
-    <select id="country" name="country">
-      <option value="australia">Australia</option>
-      <option value="canada">Canada</option>
-      <option value="usa">USA</option>
-    </select>
-
-    <label for="subject">Subject</label>
-    <textarea id="subject" name="subject" placeholder="Write something.." style="height:200px"></textarea>
-
-    <input type="submit" value="Submit">
-  </form>
-</div>
-
-</body>
-</html>
-    """
-
-@app.get("/contact/", response_class=HTMLResponse)
-async def read_items():
-    return generate_html_response()
 
 @app.get("/")
 def read_root():
