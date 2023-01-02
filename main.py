@@ -1,114 +1,206 @@
 from typing import *
-from fastapi import Query
 from fastapi import *
 from fastapi.responses import *
+from fastapi.security import *
 from pydantic import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import *
 from sqlalchemy.orm import *
+from slack import *
+from base_model import *
 
 
 app = FastAPI()
+security = HTTPBasic()
+webhook = (
+    "https://hooks.slack.com/services/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"
+)
+fake_users_db = {
+    "johndoe": {
+        "username": "johndoe",
+        "full_name": "John Doe",
+        "email": "johndoe@example.com",
+        "hashed_password": "fakehashedsecret",
+        "disabled": False,
+    },
+    "alice": {
+        "username": "alice",
+        "full_name": "Alice Wonderson",
+        "email": "alice@example.com",
+        "hashed_password": "fakehashedsecret2",
+        "disabled": True,
+    },
+}
 
-DB_HOST = "localhost" 
-DATABASE = "test_db"
-engine = create_engine(f"mysql+pymysql://db_master:admin@{DB_HOST}/{DATABASE}")
-#connection_str = f'mysql+pymysql://{db_user}:{db_pwd}@{db_host}:{db_port}/{db_name}'
-DBSession = Session(engine)
-DB_BASE_ORM = declarative_base()
 
-#userId firstName lastName
-class Name(BaseModel):
-    userId: Optional[int] = None
-    firstName: str
-    lastName: str
+def fake_hash_password(password: str):
+    return "fakehashed" + password
 
-class NameUpdate(BaseModel):
-    userId: Optional[int] = None
-    firstName: Optional[str]
-    lastName: Optional[str]
-    
-class HostNameORM(DB_BASE_ORM):
-    __tablename__ = "test_table"
-    userId = Column(Integer, primary_key=True, autoincrement=True)
-    firstName = Column(String, index=False)
-    lastName = Column(String, index=False)
-    
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+class User(BaseModel):
+    username: str
+    email: Union[str, None] = None
+    full_name: Union[str, None] = None
+    disabled: Union[bool, None] = None
+
+
+class UserInDB(User):
+    hashed_password: str
+
+
+def get_user(db, username: str):
+    if username in db:
+        user_dict = db[username]
+        return UserInDB(**user_dict)
+
+
+def fake_decode_token(token):
+    # This doesn't provide any security at all
+    # Check the next version
+    user = get_user(fake_users_db, token)
+    return user
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    user = fake_decode_token(token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
+
+
+async def get_current_active_user(current_user: User = Depends(get_current_user)):
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+@app.post("/token")
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    user_dict = fake_users_db.get(form_data.username)
+    if not user_dict:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    user = UserInDB(**user_dict)
+    hashed_password = fake_hash_password(form_data.password)
+    if not hashed_password == user.hashed_password:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    return {"access_token": user.username, "token_type": "bearer"}
+
+
+@app.get("/users/me")
+async def read_users_me(current_user: User = Depends(get_current_active_user)):
+    return current_user
+
+
 # GET all the car records from the database
 @app.get("/user-name")
-def get_all_names(
-    response: Response,
-):
+def get_all_names(response: Response = Depends(get_current_active_user)):
     try:
+        # sends information to slack channel
+        payload = {"text": "Someone has called all the data stored in the database!"}
+        send_slack_message(payload, webhook)
+
         name_records = DBSession.query(HostNameORM).filter().all()
-        return {
-            "entries": name_records,
-            "total": len(name_records)
-        }
+        return {"entries": name_records, "total": len(name_records)}
     except Exception as e:
+        # sends information to slack channel
+        payload = {"text": "Someone has tried to access info from db, but it failed!"}
+        send_slack_message(payload, webhook)
+
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "entries": [],
-            "total":0, 
+            "total": 0,
             "error": e,
-            "detail": e.orig.args if hasattr(e, 'orig') else f"{e}"
+            "detail": e.orig.args if hasattr(e, "orig") else f"{e}",
         }
-        
+
+
 # GET the car record from the database identified by RaceCarORM.id = car_id
 @app.get("/user-name/{userId}")
 def get_name(
-    userId: int,
-    request: Request,
-    response: Response,
+    userId: int, request: Request, response: Response = Depends(get_current_active_user)
 ):
     try:
-        host_name = DBSession.query(HostNameORM).filter(HostNameORM.userId == userId).first()
+        # sends information to slack channel
+        slack_string = f"user with id: {userId} has been called!"
+        payload = {"text": slack_string}
+        send_slack_message(payload, webhook)
+
+        host_name = (
+            DBSession.query(HostNameORM).filter(HostNameORM.userId == userId).first()
+        )
         if host_name:
             return {
                 "entries": host_name,
             }
         else:
-            return {
-                "entries": [],
-                "message": f"No entries found for id: {userId}"
-            }
+            return {"entries": [], "message": f"No entries found for id: {userId}"}
     except Exception as e:
+        # sends information to slack channel
+        slack_string = f"user with id: {userId} has been called, but not found!"
+        payload = {"text": slack_string}
+        send_slack_message(payload, webhook)
+
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {
             "entries": [],
-            "id_sent": host_name, 
+            "id_sent": host_name,
             "total": 0,
             "error": e,
-            "detail": e.orig.args if hasattr(e, 'orig') else f"{e}"
+            "detail": e.orig.args if hasattr(e, "orig") else f"{e}",
         }
+
 
 # UPDATE the database record that is identified by RaceCarORM.id = race_car.id
 @app.put("/user-name")
 def edit_name(
     request: Request,
     response: Response,
-    user_name: NameUpdate,
+    user_name: NameUpdate = Depends(get_current_active_user),
 ):
     message = ""
     try:
+        # sends information to slack channel
+        slack_string = f"user: {user_name.firstName} has been called!"
+        payload = {"text": slack_string}
+        send_slack_message(payload, webhook)
+
         if not user_name.userId:
             raise Exception("missing id")
-        user_name_record = DBSession.query(HostNameORM).filter(HostNameORM.userId == user_name.userId).update(dict(user_name))                            
-        message="Record correctly updated"
+        user_name_record = (
+            DBSession.query(HostNameORM)
+            .filter(HostNameORM.userId == user_name.userId)
+            .update(dict(user_name))
+        )
+        message = "Record correctly updated"
     except Exception as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
         message = "{}".format(e)
-    
+
     return {"car": user_name, "message": message}
+
 
 # CREATE a new dabase record
 @app.post("/user-name")
 def create_user_name(
     request: Request,
     response: Response,
-    user_name: Name,
+    user_name: Name = Depends(get_current_active_user),
 ):
     try:
+        # sends information to slack channel
+        slack_string = f"A user with f_name: {user_name.firstName}, l_name: {user_name.lastName} has been created!"
+        payload = {"text": slack_string}
+        send_slack_message(payload, webhook)
+
         DBSession.begin()
         user_name_record = HostNameORM(**dict(user_name))
         DBSession.add(user_name_record)
@@ -118,20 +210,21 @@ def create_user_name(
     except Exception as e:
         DBSession.rollback()
         response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "error": e,
-            "detail": e.orig.args if hasattr(e, 'orig') else f"{e}"
-        }
+        return {"error": e, "detail": e.orig.args if hasattr(e, "orig") else f"{e}"}
+
 
 #
 # DELETE the record from the database that is idenfied by RaceCarORM.id = car_id
 @app.delete("/user-name/{userId}")
 def delete_user_name(
-    request: Request,
-    response: Response,
-    userId: int
+    request: Request, response: Response, userId: int = Depends(get_current_active_user)
 ):
     try:
+        # sends information to slack channel
+        get_name(userId, request, response)
+        slack_string = f"A user with id:{userId} has been deleted!"
+        payload = {"text": slack_string}
+        send_slack_message(payload, webhook)
         num_rows = DBSession.query(HostNameORM).filter_by(userId=userId).delete()
         if num_rows == 0:
             raise HTTPException(status_code=404, detail="Record not found")
@@ -140,15 +233,13 @@ def delete_user_name(
         raise
     except Exception as e:
         response.status_code = status.HTTP_400_BAD_REQUEST
-        return {
-            "error": e,
-            "detail": e.orig.args if hasattr(e, 'orig') else f"{e}"
-        }
+        return {"error": e, "detail": e.orig.args if hasattr(e, "orig") else f"{e}"}
     response.status_code = status.HTTP_204_NO_CONTENT
-    return 
+    return
+
 
 # def parse_list(names: List[str] = Query(None, description="List of names to greet")) -> Optional[List]:
-    
+
 #     def remove_prefix(text: str, prefix: str):
 #         return text[text.startswith(prefix) and len(prefix):]
 
@@ -181,7 +272,7 @@ def delete_user_name(
 
 # @app.get("/name_array")
 # def hello_list(names: List[str] = Depends(parse_list)):
-#     """ 
+#     """
 #     --> list param method \n
 #       --> accepts strings formatted as lists with square brackets \n
 #       --> names can be in the format \n
@@ -202,7 +293,7 @@ def delete_user_name(
 #     first_name: str
 #     last_name: str
 #     age: int
-    
+
 # UserNameData = [
 #     {"first_name": "Foo", "last_name": "jack", "age": 22},
 #      {"first_name": "test", "last_name": "dave", "age": 43},
