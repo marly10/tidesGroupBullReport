@@ -5,6 +5,6 @@ resource "aws_instance" "ec2_exampl" {
     instance_type = "t2.micro" 
      key_name = "t_mac"
     tags = {
-        Name = "Terraform_001"
+        Name = "Terraform_01221"
     }
 }
