@@ -1,5 +1,6 @@
 provider "aws" {
-    profile = "poc_admin"
+  access_key = "AKIA2XM3C3RHA3KWWPFG"
+  secret_key = "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"
     region = "us-east-1"
 }
 
