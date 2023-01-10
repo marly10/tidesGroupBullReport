@@ -1,7 +1,4 @@
-provider "aws" {
-     region                  = "us-east-1"
-
-}
+provider "aws" {}
 
 resource "aws_instance" "ec2_example" {
       ami = "ami-08fdec01f5df9998f"
