@@ -3,7 +3,7 @@ provider "aws" {
   profile                 = "default"
 }
 
-resource "aws_instance" "ec2_instance" {
+resource "aws_instance" "ec2_instances" {
     ami = "ami-08fdec01f5df9998f"
     subnet_id = "subnet-090cb74e9416cbcbd"
     instance_type = "t2.micro"
