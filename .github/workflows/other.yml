@@ -6,9 +6,9 @@ on:
 
 permissions:
   contents: read
-  
+
 jobs:
-  build:
+  other:
     runs-on: poc-home
     strategy:
       matrix:
