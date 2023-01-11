@@ -7,7 +7,7 @@ provider "aws" {
 resource "aws_instance" "ec2_exampl" {
       ami = "ami-08fdec01f5df9998f"
       iam_instance_profile = "arn:aws:iam::737449008206:user/ubuntu_world"
-    instance_type = "t2.micro" 
+     instance_type = "t2.micro" 
      key_name = "t_mac"
     tags = {
         Name = "Terraform_001"
