@@ -1,5 +1,12 @@
 name: Demo Python Workflow
-on: [push]
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+
+permissions:
+  contents: read
+  
 jobs:
   build:
     runs-on: poc-home
