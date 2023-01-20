@@ -93,7 +93,9 @@ jobs:
 
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
-      run: terraform fmt
+      run: |
+        aws ec2 describe-instances 
+        terraform fmt
       working-directory: example/file/
     
       # Checks that all Terraform configuration files adhere to a canonical format
