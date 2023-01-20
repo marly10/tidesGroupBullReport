@@ -27,15 +27,3 @@ variable "secret_key" {
   default = ""
 }
 
-
-
-
-resource "aws_instance" "ec2_exampl" {
-      ami = "${var.ami}"
-      iam_instance_profile = "${var.iam_instance_profile}"
-     instance_type ="${var.instance_type}"
-     key_name = "${var.key_name}"
-    tags = {
-        Name = "${var.name}"
-    }
-}
