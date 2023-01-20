@@ -72,6 +72,7 @@ env:
 
 jobs:
   terraform:
+  
     name: 'Terraform'
     runs-on: self-hosted
     
@@ -93,6 +94,11 @@ jobs:
     # Checks that all Terraform configuration files adhere to a canonical format
     - name: Terraform Format
       run: terraform fmt
+      working-directory: example/file/
+    
+      # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Validate
+      run: terraform validate
       working-directory: example/file/
 
     # Generates an execution plan for Terraform
