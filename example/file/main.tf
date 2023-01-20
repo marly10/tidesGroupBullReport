@@ -1,16 +1,18 @@
 provider "aws" {
-  access_key = "AKIA2XM3C3RHA3KWWPFG"
-  secret_key = "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"
+  access_key = "${var.access_key}"
+  secret_key = "${var.secret_key}"
     region = "us-east-1"
 }
 
 resource "aws_instance" "ec2_exampl" {
-      ami = "ami-08fdec01f5df9998f"
-      iam_instance_profile = "gha_poc"
-     instance_type = "t2.micro" 
-     key_name = "t_mac"
+      ami = "${var.ami}"
+      iam_instance_profile = "${var.iam_instance_profile}"
+     instance_type ="${var.instance_type}"
+     key_name = "${var.key_name}"
     tags = {
-        Name = "Terraform_001"
+       Name = "Terraform_001"
     }
 }
+
+
 

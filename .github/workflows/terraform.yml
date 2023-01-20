@@ -60,6 +60,16 @@ on:
 permissions:
   contents: read
 
+env:
+  TF_VAR_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  TF_VAR_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  TF_VAR_ami: ${{ secrets.AMI }}
+  TF_VAR_iam_instance_profile: ${{ secrets.IAM_INSTANCE_PROFILE }}
+  TF_VAR_iam_instance_type: ${{ secrets.INSTANCE_TYPE }}
+  TF_VAR_key_name: ${{ secrets.KEY_NAME }}
+  TF_LOG: trace
+  TF_LOG_PATH: ./terraform.log
+
 jobs:
   terraform:
     name: 'Terraform'
