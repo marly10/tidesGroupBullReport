@@ -63,13 +63,14 @@ permissions:
 jobs:
   terraform:
     name: 'Terraform'
-    runs-on: poc-home
+    runs-on: self-hosted
+    
+    environment: production
 
     steps:
     - run: |
         echo "Log level: ${{ github.event.inputs.logLevel }}"
         echo "Tags: ${{ github.event.inputs.tags }}" 
-    environment: production
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
       uses: actions/checkout@v3
