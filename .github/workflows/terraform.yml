@@ -45,6 +45,14 @@
 name: 'Terraform'
 
 on:
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'Test scenario tags'  
   push:
     branches: [ "master" ]
   pull_request:
@@ -56,9 +64,12 @@ jobs:
   terraform:
     name: 'Terraform'
     runs-on: poc-home
-    environment: production
 
     steps:
+    - run: |
+        echo "Log level: ${{ github.event.inputs.logLevel }}"
+        echo "Tags: ${{ github.event.inputs.tags }}" 
+    environment: production
     # Checkout the repository to the GitHub Actions runner
     - name: Checkout
       uses: actions/checkout@v3

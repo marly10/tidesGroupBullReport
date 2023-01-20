@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from slack import *
-from auth import *
+from src.auth import *
 from json_test import *
 from base_model import *
 #https://mixedanalytics.com/blog/list-actually-free-open-no-auth-needed-apis/
