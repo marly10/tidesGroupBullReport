@@ -66,7 +66,7 @@ env:
   TF_VAR_ami: ${{ secrets.AMI }}
   TF_VAR_iam_instance_profile: ${{ secrets.IAM_INSTANCE_PROFILE }}
   TF_VAR_iam_instance_type: ${{ secrets.INSTANCE_TYPE }}
-  TF_VAR_key_name: ${{ secrets.KEY_NAME }}
+  TF_VAR_key_name: ${{ vars.var_test }}
   TF_LOG: trace
   TF_LOG_PATH: ./terraform.log
 
