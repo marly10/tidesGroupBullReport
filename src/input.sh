@@ -19,3 +19,4 @@ else
 fi
 
 #printf 'string\ny\nno\nmaybe\n' | ./input.sh
+# https://docs.github.com/en/actions/using-jobs/defining-outputs-for-jobs
